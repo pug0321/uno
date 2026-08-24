@@ -20,7 +20,7 @@
             <div class="ritual-content">
                 <div class="ritual-spinner"></div>
                 <div class="ritual-title" id="ritual-title-label">GEMINI AI PROCESSING</div>
-                <div id="ritual-status" class="ritual-desc">アップロード写真を軽量化し、AIサーバーへ送信中...</div>
+                <div id="ritual-status" class="ritual-desc">画像を解析し、AIサーバーへ送信中...</div>
                 <div class="ritual-progress-track">
                     <div id="ritual-bar"></div>
                 </div>
@@ -64,7 +64,7 @@
                 <input type="file" id="userRoomInput" accept="image/jpeg, image/png, image/webp" onchange="window.handleUserRoomUpload(event)">
             </div>
 
-            <!-- ROOM CLEAR ボタン（中継サーバー経由で家具消去） -->
+            <!-- ROOM CLEAR ボタン -->
             <div id="room-clear-banner" onclick="window.executeGeminiRoomClear()">
                 <div class="clear-title">ROOM CLEAR（Geminiで家具を完全消去）</div>
             </div>
@@ -242,7 +242,10 @@
     let scene, camera, renderer;
     let interactiveObjects = [];
     let currentBundleItems = [];
-    let currentCompressedImageBase64 = null;
+    
+    // CORSエラーを防ぐための安全な初期ダミーBase64（1x1の透明ピクセル）
+    let currentCompressedImageBase64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=";
+    
     let raycaster = new THREE.Raycaster();
     let mouse = new THREE.Vector2();
     let selectedObject = null;
@@ -274,6 +277,10 @@
         dom.addEventListener('pointerup', onPointerUp);
 
         window.addEventListener('resize', onWindowResize);
+        
+        // 初期背景の設定
+        window.changePhotoBackground();
+        
         animate();
     }
 
@@ -358,9 +365,15 @@
     window.changePhotoBackground = function() {
         const preset = document.getElementById('roomPreset').value;
         const bg = document.getElementById('real-photo-bg');
-        if (preset === 'simple-plain') bg.style.backgroundImage = "url('https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1600&q=80')";
-        else if (preset === 'room-light') bg.style.backgroundImage = "url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80')";
-        else bg.style.backgroundImage = "url('https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1600&q=80')";
+        let targetUrl = 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1600&q=80';
+        
+        if (preset === 'room-light') {
+            targetUrl = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80';
+        } else if (preset === 'room-dark') {
+            targetUrl = 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1600&q=80';
+        }
+
+        bg.style.backgroundImage = `url('${targetUrl}')`;
     };
 
     // 写真アップロード時に自動でリサイズ＆軽量化（Canvas圧縮）
@@ -411,33 +424,32 @@
         const titleLabel = document.getElementById('ritual-title-label');
         const progressBar = document.getElementById('ritual-bar');
         
+        // プリセット空間の場合、もしアップロードされていないなら案内を出すか、ユーザーに写真をアップロードしてもらう
+        if (!currentCompressedImageBase64 || currentCompressedImageBase64.startsWith("data:image/jpeg;base64,/9j/4AAQ")) {
+            alert('AIによる画像処理を行うには、事前に「USER\'S ROOM」からお部屋の写真をアップロードしてください。');
+            return null;
+        }
+
         titleLabel.innerText = statusTitle;
         overlay.style.display = 'flex';
         setTimeout(() => { overlay.style.opacity = '1'; }, 10);
         progressBar.style.width = '20%';
-        statusText.innerText = "圧縮された部屋の写真をAIサーバーへ送信中...";
+        statusText.innerText = "写真を解析し、AIサーバーへ送信中...";
 
         try {
-            if (!currentCompressedImageBase64) {
-                // まだアップロードされていない場合は現在のプレーン背景をキャプチャして代用
-                currentCompressedImageBase64 = "data:image/jpeg;base64,..."; // 必要に応じたフォールバック
-                alert('先に「USER\'S ROOM」から部屋の写真をアップロードしてください。');
-                overlay.style.opacity = '0';
-                setTimeout(() => { overlay.style.display = 'none'; }, 500);
-                return null;
-            }
-
             progressBar.style.width = '50%';
-            statusText.innerText = "Gemini AIが空間解析と画像生成を実行中...";
+            statusText.innerText = "Gemini AIが空間解析と画像処理を実行中...";
 
-            // 自作の中継サーバーへPOST送信
             const res = await fetch('/api/room-clear', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ image: currentCompressedImageBase64, prompt: promptText })
             });
 
-            if (!res.ok) throw new Error("Server response failed");
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || "Server response failed");
+            }
 
             const data = await res.json();
             progressBar.style.width = '90%';
@@ -452,7 +464,8 @@
 
         } catch (error) {
             console.error("Gemini API Connection Error:", error);
-            statusText.innerText = "通信エラーが発生しました。サーバー設定を確認してください。";
+            statusText.innerText = `エラー: ${error.message || '通信失敗'}`;
+            alert(`AI処理中にエラーが発生しました: ${error.message}`);
             return null;
         } finally {
             setTimeout(() => {
@@ -469,7 +482,7 @@
         
         if (newImageUrl) {
             document.getElementById('real-photo-bg').style.backgroundImage = `url('${newImageUrl}')`;
-            currentCompressedImageBase64 = newImageUrl; // 次の処理のために更新
+            currentCompressedImageBase64 = newImageUrl;
         }
     };
 
@@ -481,7 +494,6 @@
         if (newImageUrl) {
             document.getElementById('real-photo-bg').style.backgroundImage = `url('${newImageUrl}')`;
             currentCompressedImageBase64 = newImageUrl;
-            // 3Dオブジェクトも自動配置
             window.clearSceneObjects();
             window.placeManualItem('table', 185000);
             setTimeout(() => window.placeManualItem('cushion', 18000), 100);
