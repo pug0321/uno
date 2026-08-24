@@ -1,586 +1,532 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UNOGRAM Interior Simulator - Complete Gemini Integration</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>UNOGRAM Interior Simulator - Complete Gemini Integration</title>
+<script src="[https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js](https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js)"></script>
 </head>
 <body>
-
 <div id="app-container">
-    <!-- ビューアエリア -->
-    <div id="viewer-section">
-        <div id="real-photo-bg"></div>
-        <div id="canvas-container"></div>
-        
-        <!-- プレミアム演出用オーバーレイ -->
-        <div id="ritual-overlay">
-            <div class="scanner-grid"></div>
-            <div class="ritual-content">
-                <div class="ritual-spinner"></div>
-                <div class="ritual-title" id="ritual-title-label">GEMINI AI PROCESSING</div>
-                <div id="ritual-status" class="ritual-desc">画像を解析し、AIサーバーへ送信中...</div>
-                <div class="ritual-progress-track">
-                    <div id="ritual-bar"></div>
-                </div>
-            </div>
-        </div>
-        
-        <div id="interaction-guide">家具をタップして移動 / スライダーで角度調整</div>
-
-        <!-- 選択中の家具を操作するバー -->
-        <div id="touch-control-bar">
-            <span id="selected-item-name">未選択</span>
-            <div class="slider-wrapper">
-                <label style="font-size: 0.55rem; color: #4b5563;">角度</label>
-                <input type="range" id="smoothRotateSlider" min="0" max="6.28" step="0.05" value="0" oninput="window.onSmoothRotate(this.value)">
-            </div>
-            <button class="t-btn" onclick="window.scaleObject()">サイズ</button>
-            <button class="t-btn delete" onclick="window.deleteObject()">削除</button>
-        </div>
-
-        <!-- おすすめコーデ適用バナー（Gemini連携） -->
-        <div id="ai-recommend-banner" onclick="window.executeGeminiRecommend()">
-            <div class="ai-badge">UNOGRAM COORDINATE</div>
-            <div class="ai-title">ウノグラムおすすめコーデを適用 (AI生成)</div>
-        </div>
-    </div>
-
-    <!-- コントロールパネル -->
-    <div id="control-panel">
-        <div class="panel-content">
-            <h2>1. ベース空間の選択</h2>
-            <div class="control-group">
-                <select id="roomPreset" onchange="window.changePhotoBackground()">
-                    <option value="simple-plain">シンプルプレーン（デモ空間）</option>
-                    <option value="room-light">ラグジュアリー・ライトオーク空間</option>
-                    <option value="room-dark">ダークウォルナット・モダン空間</option>
-                </select>
-            </div>
-
-            <div class="control-group" style="margin-top: 6px;">
-                <label>USER'S ROOM (自分の部屋をアップロード)</label>
-                <input type="file" id="userRoomInput" accept="image/jpeg, image/png, image/webp" onchange="window.handleUserRoomUpload(event)">
-            </div>
-
-            <!-- ROOM CLEAR ボタン -->
-            <div id="room-clear-banner" onclick="window.executeGeminiRoomClear()">
-                <div class="clear-title">ROOM CLEAR（Geminiで家具を完全消去）</div>
-            </div>
-
-            <h2>2. ウノグラム プロダクト選択</h2>
-            
-            <div class="catalog-item">
-                <div class="catalog-info">
-                    <h3>ソファ</h3>
-                    <span>高精度ファブリック・モデル</span>
-                    <div class="price">¥298,000 (税込)</div>
-                </div>
-                <div class="action-buttons">
-                    <button class="remove-btn" onclick="window.removeManualItem('sofa')">消去</button>
-                    <button class="add-btn" onclick="window.placeManualItem('sofa', 298000)">配置する</button>
-                </div>
-            </div>
-
-            <div class="catalog-item">
-                <div class="catalog-info">
-                    <h3>テーブル</h3>
-                    <span>センター・ローテーブル</span>
-                    <div class="price">¥185,000 (税込)</div>
-                </div>
-                <div class="action-buttons">
-                    <button class="remove-btn" onclick="window.removeManualItem('table')">消去</button>
-                    <button class="add-btn" onclick="window.placeManualItem('table', 185000)">配置する</button>
-                </div>
-            </div>
-
-            <div class="catalog-item">
-                <div class="catalog-info">
-                    <h3>シャンデリア</h3>
-                    <span>ブラス＆クリスタル</span>
-                    <div class="price">¥240,000 (税込)</div>
-                </div>
-                <div class="action-buttons">
-                    <button class="remove-btn" onclick="window.removeManualItem('chandelier')">消去</button>
-                    <button class="add-btn" onclick="window.placeManualItem('chandelier', 240000)">配置する</button>
-                </div>
-            </div>
-
-            <div class="catalog-item">
-                <div class="catalog-info">
-                    <h3>クッション</h3>
-                    <span>アクセント・ベルベット</span>
-                    <div class="price">¥18,000 (税込)</div>
-                </div>
-                <div class="action-buttons">
-                    <button class="remove-btn" onclick="window.removeManualItem('cushion')">消去</button>
-                    <button class="add-btn" onclick="window.placeManualItem('cushion', 18000)">配置する</button>
-                </div>
-            </div>
-
-            <div class="catalog-item">
-                <div class="catalog-info">
-                    <h3>その他、雑貨</h3>
-                    <span>インテリアデコレーション小物</span>
-                    <div class="price">¥24,000 (税込)</div>
-                </div>
-                <div class="action-buttons">
-                    <button class="remove-btn" onclick="window.removeManualItem('decor')">消去</button>
-                    <button class="add-btn" onclick="window.placeManualItem('decor', 24000)">配置する</button>
-                </div>
-            </div>
-
-            <div class="action-group" style="margin-top: 4px;">
-                <button id="clear-btn" onclick="window.clearSceneObjects()" style="background: #e5e7eb; color: #374151; width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">配置オブジェクトを全消去</button>
-            </div>
-        </div>
-
-        <div id="cart-summary">
-            <div class="cart-total-row">
-                <span>コーディネート合計:</span>
-                <span id="totalPrice">¥0</span>
-            </div>
-            <button id="checkout-btn" onclick="window.proceedToShopify()">この構成を一括でカートへ入れる</button>
-        </div>
-    </div>
+<!-- ビューアエリア -->
+<div id="viewer-section">
+<div id="real-photo-bg"></div>
+<div id="canvas-container"></div>
+<!-- プレミアム演出用オーバーレイ -->
+<div id="ritual-overlay">
+<div class="scanner-grid"></div>
+<div class="ritual-content">
+<div class="ritual-spinner"></div>
+<div class="ritual-title" id="ritual-title-label">GEMINI AI PROCESSING</div>
+<div id="ritual-status" class="ritual-desc">画像を解析し、AIサーバーへ送信中...</div>
+<div class="ritual-progress-track">
+<div id="ritual-bar"></div>
 </div>
-
+</div>
+</div>
+<div id="interaction-guide">家具をタップして移動 / スライダーで角度調整</div>
+<!-- 選択中の家具を操作するバー -->
+<div id="touch-control-bar">
+<span id="selected-item-name">未選択</span>
+<div class="slider-wrapper">
+<label style="font-size: 0.55rem; color: #4b5563;">角度</label>
+<input type="range" id="smoothRotateSlider" min="0" max="6.28" step="0.05" value="0" oninput="window.onSmoothRotate(this.value)">
+</div>
+<button class="t-btn" onclick="window.scaleObject()">サイズ</button>
+<button class="t-btn delete" onclick="window.deleteObject()">削除</button>
+</div>
+<!-- おすすめコーデ適用バナー（Gemini連携） -->
+<div id="ai-recommend-banner" onclick="window.executeGeminiRecommend()">
+<div class="ai-badge">UNOGRAM COORDINATE</div>
+<div class="ai-title">ウノグラムおすすめコーデを適用 (AI生成)</div>
+</div>
+</div>
+<!-- コントロールパネル -->
+<div id="control-panel">
+<div class="panel-content">
+<h2>1. ベース空間の選択</h2>
+<div class="control-group">
+<select id="roomPreset" onchange="window.changePhotoBackground()">
+<option value="simple-plain">シンプルプレーン（デモ空間）</option>
+<option value="room-light">ラグジュアリー・ライトオーク空間</option>
+<option value="room-dark">ダークウォルナット・モダン空間</option>
+</select>
+</div>
+<div class="control-group" style="margin-top: 6px;">
+<label>USER'S ROOM (自分の部屋をアップロード)</label>
+<input type="file" id="userRoomInput" accept="image/jpeg, image/png, image/webp" onchange="window.handleUserRoomUpload(event)">
+</div>
+<!-- ROOM CLEAR ボタン -->
+<div id="room-clear-banner" onclick="window.executeGeminiRoomClear()">
+<div class="clear-title">ROOM CLEAR（Geminiで家具を完全消去）</div>
+</div>
+<h2>2. ウノグラム プロダクト選択</h2>
+<div class="catalog-item">
+<div class="catalog-info">
+<h3>ソファ</h3>
+<span>高精度ファブリック・モデル</span>
+<div class="price">¥298,000 (税込)</div>
+</div>
+<div class="action-buttons">
+<button class="remove-btn" onclick="window.removeManualItem('sofa')">消去</button>
+<button class="add-btn" onclick="window.placeManualItem('sofa', 298000)">配置する</button>
+</div>
+</div>
+<div class="catalog-item">
+<div class="catalog-info">
+<h3>テーブル</h3>
+<span>センター・ローテーブル</span>
+<div class="price">¥185,000 (税込)</div>
+</div>
+<div class="action-buttons">
+<button class="remove-btn" onclick="window.removeManualItem('table')">消去</button>
+<button class="add-btn" onclick="window.placeManualItem('table', 185000)">配置する</button>
+</div>
+</div>
+<div class="catalog-item">
+<div class="catalog-info">
+<h3>シャンデリア</h3>
+<span>ブラス＆クリスタル</span>
+<div class="price">¥240,000 (税込)</div>
+</div>
+<div class="action-buttons">
+<button class="remove-btn" onclick="window.removeManualItem('chandelier')">消去</button>
+<button class="add-btn" onclick="window.placeManualItem('chandelier', 240000)">配置する</button>
+</div>
+</div>
+<div class="catalog-item">
+<div class="catalog-info">
+<h3>クッション</h3>
+<span>アクセント・ベルベット</span>
+<div class="price">¥18,000 (税込)</div>
+</div>
+<div class="action-buttons">
+<button class="remove-btn" onclick="window.removeManualItem('cushion')">消去</button>
+<button class="add-btn" onclick="window.placeManualItem('cushion', 18000)">配置する</button>
+</div>
+</div>
+<div class="catalog-item">
+<div class="catalog-info">
+<h3>その他、雑貨</h3>
+<span>インテリアデコレーション小物</span>
+<div class="price">¥24,000 (税込)</div>
+</div>
+<div class="action-buttons">
+<button class="remove-btn" onclick="window.removeManualItem('decor')">消去</button>
+<button class="add-btn" onclick="window.placeManualItem('decor', 24000)">配置する</button>
+</div>
+</div>
+<div class="action-group" style="margin-top: 4px;">
+<button id="clear-btn" onclick="window.clearSceneObjects()" style="background: #e5e7eb; color: #374151; width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">配置オブジェクトを全消去</button>
+</div>
+</div>
+<div id="cart-summary">
+<div class="cart-total-row">
+<span>コーディネート合計:</span>
+<span id="totalPrice">¥0</span>
+</div>
+<button id="checkout-btn" onclick="window.proceedToShopify()">この構成を一括でカートへ入れる</button>
+</div>
+</div>
+</div>
 <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body {
-        width: 100%; min-height: 100vh; background-color: #f3f4f6; color: #1f2937;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        overflow-x: hidden;
-    }
-    #app-container { display: flex; flex-direction: column; width: 100vw; min-height: 100vh; }
-    #viewer-section { width: 100%; height: 55vh; position: relative; background: #e5e5e5; flex-shrink: 0; overflow: hidden; }
-    #real-photo-bg {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background-image: url('https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1600&q=80');
-        background-size: cover; background-position: center; z-index: 1; transition: filter 0.8s ease;
-    }
-    #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; touch-action: none; }
-    #ritual-overlay {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(10, 10, 15, 0.88); backdrop-filter: blur(6px);
-        z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center;
-        color: #ffffff; text-align: center; opacity: 0; transition: opacity 0.5s ease;
-    }
-    .scanner-grid {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background-image: linear-gradient(rgba(37, 99, 235, 0.15) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(37, 99, 235, 0.15) 1px, transparent 1px);
-        background-size: 30px 30px; animation: scanMove 4s linear infinite; pointer-events: none;
-    }
-    @keyframes scanMove { 0% { background-position: 0 0; } 100% { background-position: 0 30px; } }
-    .ritual-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 80%; max-width: 300px; }
-    .ritual-spinner {
-        width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.2); border-top-color: #3b82f6;
-        border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 2px;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .ritual-title { font-size: 0.7rem; letter-spacing: 2px; color: #60a5fa; font-weight: bold; }
-    .ritual-desc { font-size: 0.6rem; color: #cbd5e1; min-height: 20px; line-height: 1.3; }
-    .ritual-progress-track { width: 100%; height: 3px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-top: 4px; }
-    #ritual-bar { width: 0%; height: 100%; background: #3b82f6; transition: width 0.1s linear; }
-    #interaction-guide {
-        position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.9); border: 1px solid #2563eb;
-        color: #1e40af; padding: 4px 8px; font-size: 0.6rem; border-radius: 4px; z-index: 10; pointer-events: none;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    #touch-control-bar {
-        position: absolute; top: 10px; right: 10px; display: none; align-items: center; gap: 6px; z-index: 10;
-        background: rgba(255,255,255,0.95); padding: 5px 10px; border: 1px solid #d1d5db; border-radius: 6px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    }
-    #selected-item-name { font-size: 0.65rem; font-weight: bold; color: #1f2937; }
-    .slider-wrapper { display: flex; align-items: center; gap: 4px; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
-    #smoothRotateSlider { width: 70px; cursor: pointer; }
-    .t-btn { background: #ffffff; color: #1d4ed8; border: 1px solid #93c5fd; padding: 3px 6px; font-size: 0.6rem; border-radius: 4px; cursor: pointer; font-weight: bold; }
-    .t-btn.delete { color: #ef4444; border-color: #fca5a5; }
-    #ai-recommend-banner { 
-        position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); 
-        background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%); 
-        border: 1px solid #60a5fa; padding: 6px 14px; border-radius: 30px; z-index: 10; cursor: pointer; 
-        box-shadow: 0 4px 15px rgba(29,78,216,0.3); text-align: center; width: 90%; max-width: 320px;
-    }
-    .ai-badge { font-size: 0.5rem; color: #93c5fd; font-weight: bold; margin-bottom: 1px; }
-    .ai-title { font-size: 0.7rem; color: #ffffff; font-weight: bold; }
-    #room-clear-banner { 
-        background: #ffffff; border: 1px dashed #2563eb; padding: 6px 10px; border-radius: 6px; 
-        cursor: pointer; text-align: center; margin-top: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    .clear-title { font-size: 0.65rem; color: #1f2937; font-weight: bold; }
-    #control-panel { width: 100%; background: #ffffff; display: flex; flex-direction: column; z-index: 20; border-top: 1px solid #e5e7eb; }
-    .panel-content { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
-    h2 { font-size: 0.75rem; color: #1d4ed8; border-bottom: 1px solid #e5e7eb; padding-bottom: 2px; margin-top: 2px; font-weight: bold; }
-    .control-group { display: flex; flex-direction: column; gap: 3px; }
-    label { font-size: 0.65rem; color: #4b5563; font-weight: 500; }
-    select, input[type="file"] { width: 100%; padding: 6px; background: #f9fafb; border: 1px solid #d1d5db; color: #1f2937; border-radius: 4px; font-size: 0.75rem; }
-    .catalog-item { background: #f9fafb; border: 1px solid #e5e7eb; padding: 6px 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
-    .catalog-info h3 { font-size: 0.7rem; color: #1f2937; font-weight: bold; }
-    .catalog-info span { font-size: 0.55rem; color: #6b7280; display: block; margin-top: 1px; }
-    .catalog-info .price { color: #1d4ed8; font-weight: bold; font-size: 0.7rem; margin-top: 1px; }
-    .action-buttons { display: flex; gap: 4px; }
-    .action-buttons button.add-btn { background: #1d4ed8; color: #ffffff; border: none; padding: 5px 8px; font-weight: bold; font-size: 0.6rem; border-radius: 4px; cursor: pointer; }
-    .action-buttons button.remove-btn { background: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db; padding: 5px 6px; font-weight: bold; font-size: 0.6rem; border-radius: 4px; cursor: pointer; }
-    #cart-summary { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
-    .cart-total-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; font-weight: bold; color: #1f2937; }
-    .cart-total-row span:last-child { color: #1d4ed8; font-size: 1rem; }
-    #checkout-btn { background: #1d4ed8; color: #ffffff; border: none; padding: 8px; font-weight: bold; font-size: 0.75rem; border-radius: 4px; cursor: pointer; box-shadow: 0 2px 6px rgba(29,78,216,0.2); }
-    @media (min-width: 768px) {
-        html, body { height: 100vh; overflow: hidden; }
-        #app-container { flex-direction: row; height: 100vh; }
-        #viewer-section { width: 70vw; height: 100vh; }
-        #control-panel { width: 30vw; height: 100vh; overflow-y: auto; border-top: none; border-left: 1px solid #e5e7eb; }
-        .panel-content { flex: 1; }
-    }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+width: 100%; min-height: 100vh; background-color: #f3f4f6; color: #1f2937;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+overflow-x: hidden;
+}
+#app-container { display: flex; flex-direction: column; width: 100vw; min-height: 100vh; }
+#viewer-section { width: 100%; height: 55vh; position: relative; background: #e5e5e5; flex-shrink: 0; overflow: hidden; }
+#real-photo-bg {
+position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+background-size: cover; background-position: center; z-index: 1; transition: filter 0.8s ease;
+}
+#canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; touch-action: none; }
+#ritual-overlay {
+position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+background: rgba(10, 10, 15, 0.88); backdrop-filter: blur(6px);
+z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center;
+color: #ffffff; text-align: center; opacity: 0; transition: opacity 0.5s ease;
+}
+.scanner-grid {
+position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+background-image: linear-gradient(rgba(37, 99, 235, 0.15) 1px, transparent 1px),
+linear-gradient(90deg, rgba(37, 99, 235, 0.15) 1px, transparent 1px);
+background-size: 30px 30px; animation: scanMove 4s linear infinite; pointer-events: none;
+}
+@keyframes scanMove { 0% { background-position: 0 0; } 100% { background-position: 0 30px; } }
+.ritual-content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 80%; max-width: 300px; }
+.ritual-spinner {
+width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.2); border-top-color: #3b82f6;
+border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 2px;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.ritual-title { font-size: 0.7rem; letter-spacing: 2px; color: #60a5fa; font-weight: bold; }
+.ritual-desc { font-size: 0.6rem; color: #cbd5e1; min-height: 20px; line-height: 1.3; }
+.ritual-progress-track { width: 100%; height: 3px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-top: 4px; }
+#ritual-bar { width: 0%; height: 100%; background: #3b82f6; transition: width 0.1s linear; }
+#interaction-guide {
+position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.9); border: 1px solid #2563eb;
+color: #1e40af; padding: 4px 8px; font-size: 0.6rem; border-radius: 4px; z-index: 10; pointer-events: none;
+box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+#touch-control-bar {
+position: absolute; top: 10px; right: 10px; display: none; align-items: center; gap: 6px; z-index: 10;
+background: rgba(255,255,255,0.95); padding: 5px 10px; border: 1px solid #d1d5db; border-radius: 6px;
+box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+#selected-item-name { font-size: 0.65rem; font-weight: bold; color: #1f2937; }
+.slider-wrapper { display: flex; align-items: center; gap: 4px; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
+#smoothRotateSlider { width: 70px; cursor: pointer; }
+.t-btn { background: #ffffff; color: #1d4ed8; border: 1px solid #93c5fd; padding: 3px 6px; font-size: 0.6rem; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.t-btn.delete { color: #ef4444; border-color: #fca5a5; }
+#ai-recommend-banner {
+position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+border: 1px solid #60a5fa; padding: 6px 14px; border-radius: 30px; z-index: 10; cursor: pointer;
+box-shadow: 0 4px 15px rgba(29,78,216,0.3); text-align: center; width: 90%; max-width: 320px;
+}
+.ai-badge { font-size: 0.5rem; color: #93c5fd; font-weight: bold; margin-bottom: 1px; }
+.ai-title { font-size: 0.7rem; color: #ffffff; font-weight: bold; }
+#room-clear-banner {
+background: #ffffff; border: 1px dashed #2563eb; padding: 6px 10px; border-radius: 6px;
+cursor: pointer; text-align: center; margin-top: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.clear-title { font-size: 0.65rem; color: #1f2937; font-weight: bold; }
+#control-panel { width: 100%; background: #ffffff; display: flex; flex-direction: column; z-index: 20; border-top: 1px solid #e5e7eb; }
+.panel-content { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+h2 { font-size: 0.75rem; color: #1d4ed8; border-bottom: 1px solid #e5e7eb; padding-bottom: 2px; margin-top: 2px; font-weight: bold; }
+.control-group { display: flex; flex-direction: column; gap: 3px; }
+label { font-size: 0.65rem; color: #4b5563; font-weight: 500; }
+select, input[type="file"] { width: 100%; padding: 6px; background: #f9fafb; border: 1px solid #d1d5db; color: #1f2937; border-radius: 4px; font-size: 0.75rem; }
+.catalog-item { background: #f9fafb; border: 1px solid #e5e7eb; padding: 6px 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+.catalog-info h3 { font-size: 0.7rem; color: #1f2937; font-weight: bold; }
+.catalog-info span { font-size: 0.55rem; color: #6b7280; display: block; margin-top: 1px; }
+.catalog-info .price { color: #1d4ed8; font-weight: bold; font-size: 0.7rem; margin-top: 1px; }
+.action-buttons { display: flex; gap: 4px; }
+.action-buttons button.add-btn { background: #1d4ed8; color: #ffffff; border: none; padding: 5px 8px; font-weight: bold; font-size: 0.6rem; border-radius: 4px; cursor: pointer; }
+.action-buttons button.remove-btn { background: #f3f4f6; color: #4b5563; border: 1px solid #d1d5db; padding: 5px 6px; font-weight: bold; font-size: 0.6rem; border-radius: 4px; cursor: pointer; }
+#cart-summary { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+.cart-total-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; font-weight: bold; color: #1f2937; }
+.cart-total-row span:last-child { color: #1d4ed8; font-size: 1rem; }
+#checkout-btn { background: #1d4ed8; color: #ffffff; border: none; padding: 8px; font-weight: bold; font-size: 0.75rem; border-radius: 4px; cursor: pointer; box-shadow: 0 2px 6px rgba(29,78,216,0.2); }
+@media (min-width: 768px) {
+html, body { height: 100vh; overflow: hidden; }
+#app-container { flex-direction: row; height: 100vh; }
+#viewer-section { width: 70vw; height: 100vh; }
+#control-panel { width: 30vw; height: 100vh; overflow-y: auto; border-top: none; border-left: 1px solid #e5e7eb; }
+.panel-content { flex: 1; }
+}
 </style>
-
 <script>
-    let scene, camera, renderer;
-    let interactiveObjects = [];
-    let currentBundleItems = [];
-    
-    // CORSエラーを防ぐための安全な初期ダミーBase64（1x1の透明ピクセル）
-    let currentCompressedImageBase64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=";
-    
-    let raycaster = new THREE.Raycaster();
-    let mouse = new THREE.Vector2();
-    let selectedObject = null;
-    let isDragging = false;
-    let dragPlane = new THREE.Plane();
-    let intersection = new THREE.Vector3();
-
-    function initSimulator() {
-        const container = document.getElementById('canvas-container');
-        scene = new THREE.Scene();
-
-        camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(0, 1.4, 4.2);
-        camera.lookAt(0, 0.4, 0);
-
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        container.appendChild(renderer.domElement);
-
-        scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        dirLight.position.set(2, 4, 2);
-        scene.add(dirLight);
-
-        const dom = renderer.domElement;
-        dom.addEventListener('pointerdown', onPointerDown);
-        dom.addEventListener('pointermove', onPointerMove);
-        dom.addEventListener('pointerup', onPointerUp);
-
-        window.addEventListener('resize', onWindowResize);
-        
-        // 初期背景の設定
-        window.changePhotoBackground();
-        
-        animate();
-    }
-
-    function animate() {
-        requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-    }
-
-    function onWindowResize() {
-        const container = document.getElementById('canvas-container');
-        camera.aspect = container.clientWidth / container.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight);
-    }
-
-    function onPointerDown(event) {
-        const rect = renderer.domElement.getBoundingClientRect();
-        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-        raycaster.setFromCamera(mouse, camera);
-        const intersects = raycaster.intersectObjects(interactiveObjects, true);
-
-        if (intersects.length > 0) {
-            let hit = intersects[0].object;
-            while(hit.parent && hit.parent.type !== "Scene") {
-                hit = hit.parent;
-            }
-            selectedObject = hit;
-            isDragging = true;
-            dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), selectedObject.position);
-            
-            document.getElementById('selected-item-name').innerText = selectedObject.userData.name || '選択中';
-            document.getElementById('smoothRotateSlider').value = selectedObject.rotation.y % (Math.PI * 2);
-            document.getElementById('touch-control-bar').style.display = 'flex';
-        } else {
-            selectedObject = null;
-            isDragging = false;
-            document.getElementById('touch-control-bar').style.display = 'none';
-        }
-    }
-
-    function onPointerMove(event) {
-        if (!isDragging || !selectedObject) return;
-
-        const rect = renderer.domElement.getBoundingClientRect();
-        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-        raycaster.setFromCamera(mouse, camera);
-        if (raycaster.ray.intersectPlane(dragPlane, intersection)) {
-            selectedObject.position.x = intersection.x;
-            selectedObject.position.z = intersection.z;
-        }
-    }
-
-    function onPointerUp() { isDragging = false; }
-
-    window.onSmoothRotate = function(val) {
-        if (selectedObject) selectedObject.rotation.y = parseFloat(val);
-    };
-
-    window.scaleObject = function() {
-        if (selectedObject) {
-            if (selectedObject.scale.x > 1.2) selectedObject.scale.set(1, 1, 1);
-            else selectedObject.scale.multiplyScalar(1.2);
-        }
-    };
-
-    window.deleteObject = function() {
-        if (selectedObject) {
-            scene.remove(selectedObject);
-            interactiveObjects = interactiveObjects.filter(obj => obj !== selectedObject);
-            const idx = currentBundleItems.findIndex(item => item.uuid === selectedObject.uuid);
-            if (idx !== -1) currentBundleItems.splice(idx, 1);
-            selectedObject = null;
-            document.getElementById('touch-control-bar').style.display = 'none';
-            updateTotal();
-        }
-    };
-
-    window.changePhotoBackground = function() {
-        const preset = document.getElementById('roomPreset').value;
-        const bg = document.getElementById('real-photo-bg');
-        let targetUrl = 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1600&q=80';
-        
-        if (preset === 'room-light') {
-            targetUrl = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80';
-        } else if (preset === 'room-dark') {
-            targetUrl = 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1600&q=80';
-        }
-
-        bg.style.backgroundImage = `url('${targetUrl}')`;
-    };
-
-    // 写真アップロード時に自動でリサイズ＆軽量化（Canvas圧縮）
-    window.handleUserRoomUpload = function(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 1024;
-                const MAX_HEIGHT = 1024;
-                let width = img.width;
-                let height = img.height;
-
-                if (width > height) {
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    }
-                } else {
-                    if (height > MAX_HEIGHT) {
-                        width *= MAX_HEIGHT / height;
-                        height = MAX_HEIGHT;
-                    }
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-
-                // JPEG形式、品質0.8で軽量化されたBase64を取得
-                currentCompressedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
-                document.getElementById('real-photo-bg').style.backgroundImage = `url('${currentCompressedImageBase64}')`;
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    };
-
-    // 共通APIコールヘルパー（中継サーバーへ軽量画像を送信）
-    async function callGeminiApi(promptText, statusTitle) {
-        const overlay = document.getElementById('ritual-overlay');
-        const statusText = document.getElementById('ritual-status');
-        const titleLabel = document.getElementById('ritual-title-label');
-        const progressBar = document.getElementById('ritual-bar');
-        
-        // プリセット空間の場合、もしアップロードされていないなら案内を出すか、ユーザーに写真をアップロードしてもらう
-        if (!currentCompressedImageBase64 || currentCompressedImageBase64.startsWith("data:image/jpeg;base64,/9j/4AAQ")) {
-            alert('AIによる画像処理を行うには、事前に「USER\'S ROOM」からお部屋の写真をアップロードしてください。');
-            return null;
-        }
-
-        titleLabel.innerText = statusTitle;
-        overlay.style.display = 'flex';
-        setTimeout(() => { overlay.style.opacity = '1'; }, 10);
-        progressBar.style.width = '20%';
-        statusText.innerText = "写真を解析し、AIサーバーへ送信中...";
-
-        try {
-            progressBar.style.width = '50%';
-            statusText.innerText = "Gemini AIが空間解析と画像処理を実行中...";
-
-            const res = await fetch('/api/room-clear', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: currentCompressedImageBase64, prompt: promptText })
-            });
-
-            if (!res.ok) {
-                const errData = await res.json().catch(() => ({}));
-                throw new Error(errData.error || "Server response failed");
-            }
-
-            const data = await res.json();
-            progressBar.style.width = '90%';
-            statusText.innerText = "処理結果を反映しています...";
-
-            setTimeout(() => {
-                progressBar.style.width = '100%';
-                statusText.innerText = "完了しました";
-            }, 300);
-
-            return data.imageUrl;
-
-        } catch (error) {
-            console.error("Gemini API Connection Error:", error);
-            statusText.innerText = `エラー: ${error.message || '通信失敗'}`;
-            alert(`AI処理中にエラーが発生しました: ${error.message}`);
-            return null;
-        } finally {
-            setTimeout(() => {
-                overlay.style.opacity = '0';
-                setTimeout(() => { overlay.style.display = 'none'; }, 500);
-            }, 1000);
-        }
-    }
-
-    // ROOM CLEAR実行
-    window.executeGeminiRoomClear = async function() {
-        const prompt = "この部屋の写真に写っているすべての家具、ソファ、テーブル、シャンデリア、暖炉などの調度品を完全に消去し、隠れていた床の木目や壁を違和感なく補完して、家具が一切ないクリーンな状態の部屋の画像を生成してください。";
-        const newImageUrl = await callGeminiApi(prompt, "ROOM CLEAR EXECUTING");
-        
-        if (newImageUrl) {
-            document.getElementById('real-photo-bg').style.backgroundImage = `url('${newImageUrl}')`;
-            currentCompressedImageBase64 = newImageUrl;
-        }
-    };
-
-    // おすすめコーデ適用実行
-    window.executeGeminiRecommend = async function() {
-        const prompt = "このクリーンな部屋の写真に対して、高級感のあるファブリックソファ、スタイリッシュなセンターテーブル、上質なシャンデリアを黄金比のバランスで美しく配置したコーディネート完成形のインテリア画像を生成してください。";
-        const newImageUrl = await callGeminiApi(prompt, "UNOGRAM AI COORDINATE");
-        
-        if (newImageUrl) {
-            document.getElementById('real-photo-bg').style.backgroundImage = `url('${newImageUrl}')`;
-            currentCompressedImageBase64 = newImageUrl;
-            window.clearSceneObjects();
-            window.placeManualItem('table', 185000);
-            setTimeout(() => window.placeManualItem('cushion', 18000), 100);
-        }
-    };
-
-    window.clearSceneObjects = function() {
-        document.getElementById('touch-control-bar').style.display = 'none';
-        interactiveObjects.forEach(obj => scene.remove(obj));
-        interactiveObjects = [];
-        currentBundleItems = [];
-        selectedObject = null;
-        updateTotal();
-    };
-
-    window.removeManualItem = function(type) {
-        for (let i = interactiveObjects.length - 1; i >= 0; i--) {
-            const obj = interactiveObjects[i];
-            if (obj.userData.type === type) {
-                scene.remove(obj);
-                if (selectedObject === obj) {
-                    selectedObject = null;
-                    document.getElementById('touch-control-bar').style.display = 'none';
-                }
-                interactiveObjects.splice(i, 1);
-                const idx = currentBundleItems.findIndex(item => item.uuid === obj.uuid);
-                if (idx !== -1) currentBundleItems.splice(idx, 1);
-                updateTotal();
-                break;
-            }
-        }
-    };
-
-    window.placeManualItem = function(type, price) {
-        let mesh, itemName = '';
-        if (type === 'sofa') {
-            itemName = 'ソファ';
-            const group = new THREE.Group();
-            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd9c594, roughness: 0.6 });
-            const seatMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.5 });
-            const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.4, 0.8), bodyMat);
-            baseMesh.position.y = 0.2;
-            const backMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.6, 0.2), bodyMat);
-            backMesh.position.set(0, 0.7, -0.3);
-            const seatMesh = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.25, 0.75), seatMat);
-            seatMesh.position.set(0, 0.45, 0.02);
-            group.add(baseMesh); group.add(backMesh); group.add(seatMesh);
-            mesh = group;
-            mesh.position.set(0, 0, -0.5);
-        } else if (type === 'table') {
-            mesh = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: 0x111827 }));
-            mesh.position.set(0, 0.2, -0.5); itemName = 'テーブル';
-        } else if (type === 'chandelier') {
-            mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.2, 16), new THREE.MeshStandardMaterial({ color: 0x2563eb }));
-            mesh.position.set(0, 1.1, -0.6); itemName = 'シャンデリア';
-        } else if (type === 'cushion') {
-            mesh = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.18, 0.35), new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
-            mesh.position.set(0.2, 0.45, -0.4); itemName = 'クッション';
-        } else if (type === 'decor') {
-            mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.3, 16), new THREE.MeshStandardMaterial({ color: 0x2563eb }));
-            mesh.position.set(-0.2, 0.45, -0.4); itemName = 'その他、雑貨';
-        }
-
-        mesh.userData = { type: type, name: itemName };
-        scene.add(mesh);
-        interactiveObjects.push(mesh);
-        selectedObject = mesh;
-        document.getElementById('selected-item-name').innerText = itemName;
-        document.getElementById('smoothRotateSlider').value = mesh.rotation.y;
-        document.getElementById('touch-control-bar').style.display = 'flex';
-        currentBundleItems.push({ type: type, name: itemName, price: price, uuid: mesh.uuid });
-        updateTotal();
-    };
-
-    function updateTotal() {
-        const total = currentBundleItems.reduce((sum, item) => sum + item.price, 0);
-        document.getElementById('totalPrice').innerText = `¥${total.toLocaleString()}`;
-    }
-
-    window.proceedToShopify = function() {
-        if (currentBundleItems.length === 0) { alert('アイテムが選択されていません。'); return; }
-        const total = currentBundleItems.reduce((sum, item) => sum + item.price, 0);
-        alert(`【Shopify連携】合計 ¥${total.toLocaleString()} をカートへ追加します。`);
-    };
-
-    window.onload = initSimulator;
+let scene, camera, renderer;
+let interactiveObjects = [];
+let currentBundleItems = [];
+let currentCompressedImageBase64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=";
+let raycaster = new THREE.Raycaster();
+let mouse = new THREE.Vector2();
+let selectedObject = null;
+let isDragging = false;
+let dragPlane = new THREE.Plane();
+let intersection = new THREE.Vector3();
+function initSimulator() {
+const container = document.getElementById('canvas-container');
+scene = new THREE.Scene();
+camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
+camera.position.set(0, 1.4, 4.2);
+camera.lookAt(0, 0.4, 0);
+renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+container.appendChild(renderer.domElement);
+scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+dirLight.position.set(2, 4, 2);
+scene.add(dirLight);
+const dom = renderer.domElement;
+dom.addEventListener('pointerdown', onPointerDown);
+dom.addEventListener('pointermove', onPointerMove);
+dom.addEventListener('pointerup', onPointerUp);
+window.addEventListener('resize', onWindowResize);
+window.changePhotoBackground();
+animate();
+}
+function animate() {
+requestAnimationFrame(animate);
+renderer.render(scene, camera);
+}
+function onWindowResize() {
+const container = document.getElementById('canvas-container');
+camera.aspect = container.clientWidth / container.clientHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(container.clientWidth, container.clientHeight);
+}
+function onPointerDown(event) {
+const rect = renderer.domElement.getBoundingClientRect();
+mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+raycaster.setFromCamera(mouse, camera);
+const intersects = raycaster.intersectObjects(interactiveObjects, true);
+if (intersects.length > 0) {
+let hit = intersects[0].object;
+while(hit.parent && hit.parent.type !== "Scene") {
+hit = hit.parent;
+}
+selectedObject = hit;
+isDragging = true;
+dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), selectedObject.position);
+document.getElementById('selected-item-name').innerText = selectedObject.userData.name || '選択中';
+document.getElementById('smoothRotateSlider').value = selectedObject.rotation.y % (Math.PI * 2);
+document.getElementById('touch-control-bar').style.display = 'flex';
+} else {
+selectedObject = null;
+isDragging = false;
+document.getElementById('touch-control-bar').style.display = 'none';
+}
+}
+function onPointerMove(event) {
+if (!isDragging || !selectedObject) return;
+const rect = renderer.domElement.getBoundingClientRect();
+mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+raycaster.setFromCamera(mouse, camera);
+if (raycaster.ray.intersectPlane(dragPlane, intersection)) {
+selectedObject.position.x = intersection.x;
+selectedObject.position.z = intersection.z;
+}
+}
+function onPointerUp() { isDragging = false; }
+window.onSmoothRotate = function(val) {
+if (selectedObject) selectedObject.rotation.y = parseFloat(val);
+};
+window.scaleObject = function() {
+if (selectedObject) {
+if (selectedObject.scale.x > 1.2) selectedObject.scale.set(1, 1, 1);
+else selectedObject.scale.multiplyScalar(1.2);
+}
+};
+window.deleteObject = function() {
+if (selectedObject) {
+scene.remove(selectedObject);
+interactiveObjects = interactiveObjects.filter(obj => obj !== selectedObject);
+const idx = currentBundleItems.findIndex(item => item.uuid === selectedObject.uuid);
+if (idx !== -1) currentBundleItems.splice(idx, 1);
+selectedObject = null;
+document.getElementById('touch-control-bar').style.display = 'none';
+updateTotal();
+}
+};
+function cachePresetImageAsBase64(url) {
+const img = new Image();
+img.crossOrigin = 'Anonymous';
+img.onload = function() {
+const canvas = document.createElement('canvas');
+const MAX_SIZE = 800;
+let width = img.width;
+let height = img.height;
+if (width > height) {
+if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+} else {
+if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+}
+canvas.width = width;
+canvas.height = height;
+const ctx = canvas.getContext('2d');
+ctx.drawImage(img, 0, 0, width, height);
+try {
+currentCompressedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+} catch (e) {
+console.warn("CORS fallback used.");
+}
+};
+img.src = url;
+}
+window.changePhotoBackground = function() {
+const preset = document.getElementById('roomPreset').value;
+const bg = document.getElementById('real-photo-bg');
+let targetUrl = 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1600&q=80';
+if (preset === 'room-light') {
+targetUrl = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80';
+} else if (preset === 'room-dark') {
+targetUrl = 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1600&q=80';
+}
+bg.style.backgroundImage = ⁠url('${targetUrl}')⁠;
+cachePresetImageAsBase64(targetUrl);
+};
+window.handleUserRoomUpload = function(event) {
+const file = event.target.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = function(e) {
+const img = new Image();
+img.onload = function() {
+const canvas = document.createElement('canvas');
+const MAX_WIDTH = 1024;
+const MAX_HEIGHT = 1024;
+let width = img.width;
+let height = img.height;
+if (width > height) {
+if (width > MAX_WIDTH) {
+height *= MAX_WIDTH / width;
+width = MAX_WIDTH;
+}
+} else {
+if (height > MAX_HEIGHT) {
+width *= MAX_HEIGHT / height;
+height = MAX_HEIGHT;
+}
+}
+canvas.width = width;
+canvas.height = height;
+const ctx = canvas.getContext('2d');
+ctx.drawImage(img, 0, 0, width, height);
+currentCompressedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+document.getElementById('real-photo-bg').style.backgroundImage = ⁠url('${currentCompressedImageBase64}')⁠;
+};
+img.src = e.target.result;
+};
+reader.readAsDataURL(file);
+};
+async function callGeminiApi(promptText, statusTitle) {
+const overlay = document.getElementById('ritual-overlay');
+const statusText = document.getElementById('ritual-status');
+const titleLabel = document.getElementById('ritual-title-label');
+const progressBar = document.getElementById('ritual-bar');
+if (!currentCompressedImageBase64) {
+alert('画像の準備中です。もう一度お試しください。');
+return null;
+}
+titleLabel.innerText = statusTitle;
+overlay.style.display = 'flex';
+setTimeout(() => { overlay.style.opacity = '1'; }, 10);
+progressBar.style.width = '20%';
+statusText.innerText = "写真を解析し、AIサーバーへ送信中...";
+try {
+progressBar.style.width = '50%';
+statusText.innerText = "Gemini AIが空間解析と画像処理を実行中...";
+const res = await fetch('/api/room-clear', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ image: currentCompressedImageBase64, prompt: promptText })
+});
+if (!res.ok) {
+const errData = await res.json().catch(() => ({}));
+throw new Error(errData.error || "Server response failed");
+}
+const data = await res.json();
+progressBar.style.width = '90%';
+statusText.innerText = "処理結果を反映しています...";
+setTimeout(() => {
+progressBar.style.width = '100%';
+statusText.innerText = "完了しました";
+}, 300);
+return data.imageUrl;
+} catch (error) {
+console.error("Gemini API Connection Error:", error);
+statusText.innerText = ⁠エラー: ${error.message || '通信失敗'}⁠;
+alert(⁠AI処理中にエラーが発生しました: ${error.message}⁠);
+return null;
+} finally {
+setTimeout(() => {
+overlay.style.opacity = '0';
+setTimeout(() => { overlay.style.display = 'none'; }, 500);
+}, 1000);
+}
+}
+window.executeGeminiRoomClear = async function() {
+const prompt = "この部屋の写真に写っているすべての家具、ソファ、テーブル、シャンデリア、暖炉などの調度品を完全に消去し、隠れていた床の木目や壁を違和感なく補完して、家具が一切ないクリーンな状態の部屋の画像を生成してください。";
+const newImageUrl = await callGeminiApi(prompt, "ROOM CLEAR EXECUTING");
+if (newImageUrl) {
+document.getElementById('real-photo-bg').style.backgroundImage = ⁠url('${newImageUrl}')⁠;
+currentCompressedImageBase64 = newImageUrl;
+}
+};
+window.executeGeminiRecommend = async function() {
+const prompt = "このクリーンな部屋の写真に対して、高級感のあるファブリックソファ、スタイリッシュなセンターテーブル、上質なシャンデリアを黄金比のバランスで美しく配置したコーディネート完成形のインテリア画像を生成してください。";
+const newImageUrl = await callGeminiApi(prompt, "UNOGRAM AI COORDINATE");
+if (newImageUrl) {
+document.getElementById('real-photo-bg').style.backgroundImage = ⁠url('${newImageUrl}')⁠;
+currentCompressedImageBase64 = newImageUrl;
+window.clearSceneObjects();
+window.placeManualItem('table', 185000);
+setTimeout(() => window.placeManualItem('cushion', 18000), 100);
+}
+};
+window.clearSceneObjects = function() {
+document.getElementById('touch-control-bar').style.display = 'none';
+interactiveObjects.forEach(obj => scene.remove(obj));
+interactiveObjects = [];
+currentBundleItems = [];
+selectedObject = null;
+updateTotal();
+};
+window.removeManualItem = function(type) {
+for (let i = interactiveObjects.length - 1; i >= 0; i--) {
+const obj = interactiveObjects[i];
+if (obj.userData.type === type) {
+scene.remove(obj);
+if (selectedObject === obj) {
+selectedObject = null;
+document.getElementById('touch-control-bar').style.display = 'none';
+}
+interactiveObjects.splice(i, 1);
+const idx = currentBundleItems.findIndex(item => item.uuid === obj.uuid);
+if (idx !== -1) currentBundleItems.splice(idx, 1);
+updateTotal();
+break;
+}
+}
+};
+window.placeManualItem = function(type, price) {
+let mesh, itemName = '';
+if (type === 'sofa') {
+itemName = 'ソファ';
+const group = new THREE.Group();
+const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd9c594, roughness: 0.6 });
+const seatMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.5 });
+const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.4, 0.8), bodyMat);
+baseMesh.position.y = 0.2;
+const backMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.6, 0.2), bodyMat);
+backMesh.position.set(0, 0.7, -0.3);
+const seatMesh = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.25, 0.75), seatMat);
+seatMesh.position.set(0, 0.45, 0.02);
+group.add(baseMesh); group.add(backMesh); group.add(seatMesh);
+mesh = group;
+mesh.position.set(0, 0, -0.5);
+} else if (type === 'table') {
+mesh = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: 0x111827 }));
+mesh.position.set(0, 0.2, -0.5); itemName = 'テーブル';
+} else if (type === 'chandelier') {
+mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.2, 16), new THREE.MeshStandardMaterial({ color: 0x2563eb }));
+mesh.position.set(0, 1.1, -0.6); itemName = 'シャンデリア';
+} else if (type === 'cushion') {
+mesh = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.18, 0.35), new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
+mesh.position.set(0.2, 0.45, -0.4); itemName = 'クッション';
+} else if (type === 'decor') {
+mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.3, 16), new THREE.MeshStandardMaterial({ color: 0x2563eb }));
+mesh.position.set(-0.2, 0.45, -0.4); itemName = 'その他、雑貨';
+}
+mesh.userData = { type: type, name: itemName };
+scene.add(mesh);
+interactiveObjects.push(mesh);
+selectedObject = mesh;
+document.getElementById('selected-item-name').innerText = itemName;
+document.getElementById('smoothRotateSlider').value = mesh.rotation.y;
+document.getElementById('touch-control-bar').style.display = 'flex';
+currentBundleItems.push({ type: type, name: itemName, price: price, uuid: mesh.uuid });
+updateTotal();
+};
+function updateTotal() {
+const total = currentBundleItems.reduce((sum, item) => sum + item.price, 0);
+document.getElementById('totalPrice').innerText = ⁠¥${total.toLocaleString()}⁠;
+}
+window.proceedToShopify = function() {
+if (currentBundleItems.length === 0) { alert('アイテムが選択されていません。'); return; }
+const total = currentBundleItems.reduce((sum, item) => sum + item.price, 0);
+alert(⁠【Shopify連携】合計 ¥${total.toLocaleString()} をカートへ追加します。⁠);
+};
+window.onload = initSimulator;
 </script>
-
 </body>
 </html>
