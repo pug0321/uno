@@ -27,7 +27,8 @@ export default async function handler(req, res) {
         const mimeTypeMatch = image.match(/^data:(image\/\w+);base64,/);
         const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'image/jpeg';
 
-        const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        // 画像出力に対応したモデル（gemini-3.1-flash-image-preview等）を指定
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -41,39 +42,37 @@ export default async function handler(req, res) {
                             }
                         }
                     ]
-                }],
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "OBJECT",
-                        properties: {
-                            imageUrl: {
-                                type: "STRING",
-                                description: "The generated or processed room image as a base64 data URL"
-                            }
-                        },
-                        required: ["imageUrl"]
-                    }
-                }
+                }]
             })
         });
 
-        if (!geminiResponse.ok) {
-            const errText = await geminiResponse.text();
-            throw new Error(`Gemini API Error: ${errText}`);
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Gemini Image API Error: ${errText}`);
         }
 
-        const data = await geminiResponse.json();
-        const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const data = await response.json();
         
-        let resultJson;
-        try {
-            resultJson = JSON.parse(candidateText);
-        } catch (e) {
-            resultJson = { imageUrl: image }; 
+        // レスポンスのpartsからinline_data（生成された画像）を安全に抽出する
+        let generatedImageUrl = null;
+        const parts = data.candidates?.[0]?.content?.parts;
+        
+        if (parts && Array.isArray(parts)) {
+            for (const part of parts) {
+                if (part.inline_data && part.inline_data.data) {
+                    const outMime = part.inline_data.mime_type || 'image/jpeg';
+                    generatedImageUrl = `data:${outMime};base64,${part.inline_data.data}`;
+                    break;
+                }
+            }
         }
 
-        return res.status(200).json({ imageUrl: resultJson.imageUrl || image });
+        // 画像が見つからなかった場合は元の画像をフォールバックとして返す
+        if (!generatedImageUrl) {
+            generatedImageUrl = image;
+        }
+
+        return res.status(200).json({ imageUrl: generatedImageUrl });
 
     } catch (error) {
         console.error("Server relay error:", error);
