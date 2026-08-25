@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UNOGRAM Interior Simulator - Optimized Version</title>
+    <title>UNOGRAM Interior Simulator - Fixed Version</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
@@ -333,7 +333,7 @@
         currentCompressedImageBase64 = null; 
     };
 
-    // アップロード時にVercel制限（4.5MB以下）に収まるよう自動圧縮・リサイズ
+    // Vercel制限（4.5MB）を完全回避するため長辺600px・画質0.5に超軽量化
     window.handleUserRoomUpload = function(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -343,8 +343,8 @@
             const img = new Image();
             img.onload = function() {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 800;
-                const MAX_HEIGHT = 800;
+                const MAX_WIDTH = 600;
+                const MAX_HEIGHT = 600;
                 let width = img.width;
                 let height = img.height;
 
@@ -359,8 +359,7 @@
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // 画質を0.7に落として確実に軽量化（Vercel制限回避）
-                currentCompressedImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                currentCompressedImageBase64 = canvas.toDataURL('image/jpeg', 0.5);
                 document.getElementById('real-photo-bg').style.backgroundImage = "url('" + currentCompressedImageBase64 + "')";
             };
             img.src = e.target.result;
@@ -383,11 +382,11 @@
         overlay.style.display = 'flex';
         setTimeout(function() { overlay.style.opacity = '1'; }, 10);
         progressBar.style.width = '30%';
-        statusText.innerText = "軽量化された画像をサーバーへ送信中...";
+        statusText.innerText = "超軽量化された画像を送信中...";
 
         try {
             progressBar.style.width = '60%';
-            statusText.innerText = "AI画像生成サーバーで処理を実行中...";
+            statusText.innerText = "サーバーで処理を実行中...";
 
             const res = await fetch('/api/room-clear', {
                 method: 'POST',
@@ -425,7 +424,7 @@
     }
 
     window.executeDirectRoomClear = async function() {
-        const prompt = "Remove all furniture, chairs, tables, and decorations from this room image, leaving only the clean empty room with floor and walls.";
+        const prompt = "Remove all furniture from this room.";
         const newImageUrl = await callDirectApi(prompt, "ROOM CLEAR EXECUTING");
         
         if (newImageUrl) {
@@ -435,7 +434,7 @@
     };
 
     window.executeDirectRecommend = async function() {
-        const prompt = "Add a luxurious fabric sofa and a stylish center table to this empty room image.";
+        const prompt = "Add a sofa and a table to this room.";
         const newImageUrl = await callDirectApi(prompt, "AI COORDINATE EXECUTING");
         
         if (newImageUrl) {
