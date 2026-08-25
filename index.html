@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UNOGRAM Interior Simulator - Final Fix Version</title>
+    <title>UNOGRAM Interior Simulator - Imagen Version</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
@@ -17,8 +17,8 @@
             <div class="scanner-grid"></div>
             <div class="ritual-content">
                 <div class="ritual-spinner"></div>
-                <div class="ritual-title" id="ritual-title-label">IMAGE PROCESSING</div>
-                <div id="ritual-status" class="ritual-desc">サーバーで画像を処理中...</div>
+                <div class="ritual-title" id="ritual-title-label">IMAGEN AI GENERATION</div>
+                <div id="ritual-status" class="ritual-desc">Imagenが空間をレンダリング中...</div>
                 <div class="ritual-progress-track">
                     <div id="ritual-bar"></div>
                 </div>
@@ -37,9 +37,9 @@
             <button class="t-btn delete" onclick="window.deleteObject()">削除</button>
         </div>
 
-        <div id="ai-recommend-banner" onclick="window.executeDirectRecommend()">
+        <div id="ai-recommend-banner" onclick="window.executeImagenRecommend()">
             <div class="ai-badge">UNOGRAM COORDINATE</div>
-            <div class="ai-title">おすすめコーデを適用 (AI生成)</div>
+            <div class="ai-title">おすすめコーデを適用 (Imagen生成)</div>
         </div>
     </div>
 
@@ -59,8 +59,8 @@
                 <input type="file" id="userRoomInput" accept="image/jpeg, image/png, image/webp" onchange="window.handleUserRoomUpload(event)">
             </div>
 
-            <div id="room-clear-banner" onclick="window.executeDirectRoomClear()">
-                <div class="clear-title">ROOM CLEAR（家具を完全消去）</div>
+            <div id="room-clear-banner" onclick="window.executeImagenRoomClear()">
+                <div class="clear-title">ROOM CLEAR（Imagenで家具を完全消去）</div>
             </div>
 
             <h2>2. ウノグラム プロダクト選択</h2>
@@ -333,7 +333,6 @@
         currentCompressedImageBase64 = null; 
     };
 
-    // Vercel制限（4.5MB）を確実に回避するため、長辺最大500px・画質0.4に強制圧縮
     window.handleUserRoomUpload = function(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -367,7 +366,7 @@
         reader.readAsDataURL(file);
     };
 
-    async function callDirectApi(promptText, statusTitle) {
+    async function callImagenApi(promptText, statusTitle) {
         if (!currentCompressedImageBase64) {
             alert("処理を行うには、まず「USER'S ROOM」からご自身の部屋の写真をアップロードしてください。");
             return null;
@@ -382,11 +381,11 @@
         overlay.style.display = 'flex';
         setTimeout(function() { overlay.style.opacity = '1'; }, 10);
         progressBar.style.width = '30%';
-        statusText.innerText = "超軽量化された画像を送信中...";
+        statusText.innerText = "Imagen AIサーバーへ送信中...";
 
         try {
             progressBar.style.width = '60%';
-            statusText.innerText = "サーバーで処理を実行中...";
+            statusText.innerText = "Imagenが空間をレンダリング中...";
 
             const res = await fetch('/api/room-clear', {
                 method: 'POST',
@@ -401,7 +400,7 @@
 
             const data = await res.json();
             progressBar.style.width = '90%';
-            statusText.innerText = "処理結果を反映しています...";
+            statusText.innerText = "生成された画像を反映しています...";
 
             setTimeout(function() {
                 progressBar.style.width = '100%';
@@ -413,7 +412,7 @@
         } catch (error) {
             console.error("API Connection Error:", error);
             statusText.innerText = "エラー: " + error.message;
-            alert("処理中にエラーが発生しました:\n" + error.message);
+            alert("画像生成中にエラーが発生しました:\n" + error.message);
             return null;
         } finally {
             setTimeout(function() {
@@ -423,9 +422,9 @@
         }
     }
 
-    window.executeDirectRoomClear = async function() {
-        const prompt = "Remove all furniture from this room.";
-        const newImageUrl = await callDirectApi(prompt, "ROOM CLEAR EXECUTING");
+    window.executeImagenRoomClear = async function() {
+        const prompt = "A clean empty interior room with beautiful wooden floors and white walls, no furniture, photorealistic architectural photography.";
+        const newImageUrl = await callImagenApi(prompt, "ROOM CLEAR EXECUTING");
         
         if (newImageUrl) {
             document.getElementById('real-photo-bg').style.backgroundImage = "url('" + newImageUrl + "')";
@@ -433,9 +432,9 @@
         }
     };
 
-    window.executeDirectRecommend = async function() {
-        const prompt = "Add a sofa and a table to this room.";
-        const newImageUrl = await callDirectApi(prompt, "AI COORDINATE EXECUTING");
+    window.executeImagenRecommend = async function() {
+        const prompt = "A modern luxury living room interior featuring a stylish fabric sofa and a center table, photorealistic, interior design magazine style.";
+        const newImageUrl = await callImagenApi(prompt, "IMAGEN AI COORDINATE");
         
         if (newImageUrl) {
             document.getElementById('real-photo-bg').style.backgroundImage = "url('" + newImageUrl + "')";
