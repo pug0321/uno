@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UNOGRAM Interior Simulator - Imagen Version</title>
+    <title>UNOGRAM Interior Simulator - Debug Version</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
@@ -360,6 +360,7 @@
 
                 currentCompressedImageBase64 = canvas.toDataURL('image/jpeg', 0.4);
                 document.getElementById('real-photo-bg').style.backgroundImage = "url('" + currentCompressedImageBase64 + "')";
+                console.log("Image uploaded and compressed successfully. Base64 length:", currentCompressedImageBase64.length);
             };
             img.src = e.target.result;
         };
@@ -367,8 +368,10 @@
     };
 
     async function callImagenApi(promptText, statusTitle) {
+        // デバッグ用：ここで画像が保持されているかチェック
         if (!currentCompressedImageBase64) {
-            alert("処理を行うには、まず「USER'S ROOM」からご自身の部屋の写真をアップロードしてください。");
+            console.error("Error: currentCompressedImageBase64 is null or empty!");
+            alert("エラー: 処理を実行する前に、ご自身の部屋の写真をアップロードしてください（またはプリセットではなくアップロード画像が必要です）。");
             return null;
         }
 
@@ -381,26 +384,34 @@
         overlay.style.display = 'flex';
         setTimeout(function() { overlay.style.opacity = '1'; }, 10);
         progressBar.style.width = '30%';
-        statusText.innerText = "Imagen AIサーバーへ送信中...";
+        statusText.innerText = "サーバーへリクエスト送信中...";
 
         try {
-            progressBar.style.width = '60%';
-            statusText.innerText = "Imagenが空間をレンダリング中...";
-
+            console.log("Sending fetch to /api/room-clear...");
             const res = await fetch('/api/room-clear', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ image: currentCompressedImageBase64, prompt: promptText })
             });
 
+            console.log("Response status:", res.status);
+
             if (!res.ok) {
-                const errData = await res.json().catch(function() { return {}; });
-                throw new Error(errData.error || "通信エラーが発生しました");
+                let errorMsg = "通信エラーが発生しました (Status: " + res.status + ")";
+                try {
+                    const errData = await res.json();
+                    if (errData.error) errorMsg = errData.error;
+                } catch(e) {}
+                throw new Error(errorMsg);
             }
 
             const data = await res.json();
             progressBar.style.width = '90%';
-            statusText.innerText = "生成された画像を反映しています...";
+            statusText.innerText = "完了処理中...";
+
+            if (!data.imageUrl) {
+                throw new Error("サーバーから画像URLが返却されませんでした。");
+            }
 
             setTimeout(function() {
                 progressBar.style.width = '100%';
@@ -410,9 +421,9 @@
             return data.imageUrl;
 
         } catch (error) {
-            console.error("API Connection Error:", error);
+            console.error("Detailed Fetch Error:", error);
             statusText.innerText = "エラー: " + error.message;
-            alert("画像生成中にエラーが発生しました:\n" + error.message);
+            alert("処理中にエラーが発生しました:\n" + error.message);
             return null;
         } finally {
             setTimeout(function() {
@@ -423,7 +434,7 @@
     }
 
     window.executeImagenRoomClear = async function() {
-        const prompt = "A clean empty interior room with beautiful wooden floors and white walls, no furniture, photorealistic architectural photography.";
+        const prompt = "A clean empty interior room with beautiful wooden floors and white walls, no furniture.";
         const newImageUrl = await callImagenApi(prompt, "ROOM CLEAR EXECUTING");
         
         if (newImageUrl) {
@@ -433,7 +444,7 @@
     };
 
     window.executeImagenRecommend = async function() {
-        const prompt = "A modern luxury living room interior featuring a stylish fabric sofa and a center table, photorealistic, interior design magazine style.";
+        const prompt = "A modern luxury living room interior featuring a stylish fabric sofa and a center table.";
         const newImageUrl = await callImagenApi(prompt, "IMAGEN AI COORDINATE");
         
         if (newImageUrl) {
