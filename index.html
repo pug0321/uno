@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UNOGRAM Interior Simulator</title>
+    <title>UNOGRAM Interior Simulator - Direct API Version</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
@@ -17,8 +17,8 @@
             <div class="scanner-grid"></div>
             <div class="ritual-content">
                 <div class="ritual-spinner"></div>
-                <div class="ritual-title" id="ritual-title-label">GEMINI AI PROCESSING</div>
-                <div id="ritual-status" class="ritual-desc">準備中...</div>
+                <div class="ritual-title" id="ritual-title-label">IMAGE PROCESSING</div>
+                <div id="ritual-status" class="ritual-desc">サーバーで画像を処理中...</div>
                 <div class="ritual-progress-track">
                     <div id="ritual-bar"></div>
                 </div>
@@ -37,7 +37,7 @@
             <button class="t-btn delete" onclick="window.deleteObject()">削除</button>
         </div>
 
-        <div id="ai-recommend-banner" onclick="window.executeGeminiRecommend()">
+        <div id="ai-recommend-banner" onclick="window.executeDirectRecommend()">
             <div class="ai-badge">UNOGRAM COORDINATE</div>
             <div class="ai-title">おすすめコーデを適用 (AI生成)</div>
         </div>
@@ -59,8 +59,8 @@
                 <input type="file" id="userRoomInput" accept="image/jpeg, image/png, image/webp" onchange="window.handleUserRoomUpload(event)">
             </div>
 
-            <div id="room-clear-banner" onclick="window.executeGeminiRoomClear()">
-                <div class="clear-title">ROOM CLEAR（Geminiで家具を完全消去）</div>
+            <div id="room-clear-banner" onclick="window.executeDirectRoomClear()">
+                <div class="clear-title">ROOM CLEAR（家具を完全消去）</div>
             </div>
 
             <h2>2. ウノグラム プロダクト選択</h2>
@@ -111,7 +111,7 @@
                 <span>コーディネート合計:</span>
                 <span id="totalPrice">¥0</span>
             </div>
-            <button id="checkout-btn" onclick="window.proceedToShopify()">この構成をカートへ入れる</button>
+            <button id="checkout-btn" onclick="window.proceedToShopify()">この構成を一括でカートへ入れる</button>
         </div>
     </div>
 </div>
@@ -243,7 +243,6 @@
         dom.addEventListener('pointerup', onPointerUp);
 
         window.addEventListener('resize', onWindowResize);
-        
         window.changePhotoBackground();
         animate();
     }
@@ -314,8 +313,8 @@
     window.deleteObject = function() {
         if (selectedObject) {
             scene.remove(selectedObject);
-            interactiveObjects = interactiveObjects.filter(obj => obj !== selectedObject);
-            const idx = currentBundleItems.findIndex(item => item.uuid === selectedObject.uuid);
+            interactiveObjects = interactiveObjects.filter(function(obj) { return obj !== selectedObject; });
+            const idx = currentBundleItems.findIndex(function(item) { return item.uuid === selectedObject.uuid; });
             if (idx !== -1) currentBundleItems.splice(idx, 1);
             selectedObject = null;
             document.getElementById('touch-control-bar').style.display = 'none';
@@ -367,9 +366,9 @@
         reader.readAsDataURL(file);
     };
 
-    async function callGeminiApi(promptText, statusTitle) {
+    async function callDirectApi(promptText, statusTitle) {
         if (!currentCompressedImageBase64) {
-            alert("AI処理を行うには、まず「USER'S ROOM」からご自身の部屋の写真をアップロードしてください。");
+            alert("処理を行うには、まず「USER'S ROOM」からご自身の部屋の写真をアップロードしてください。");
             return null;
         }
 
@@ -381,12 +380,12 @@
         titleLabel.innerText = statusTitle;
         overlay.style.display = 'flex';
         setTimeout(function() { overlay.style.opacity = '1'; }, 10);
-        progressBar.style.width = '20%';
-        statusText.innerText = "写真をAIサーバーへ送信中...";
+        progressBar.style.width = '30%';
+        statusText.innerText = "サーバーへ画像を送信中...";
 
         try {
-            progressBar.style.width = '50%';
-            statusText.innerText = "Gemini AIが空間解析と画像生成を実行中...";
+            progressBar.style.width = '60%';
+            statusText.innerText = "AI画像生成サーバーで処理を実行中...";
 
             const res = await fetch('/api/room-clear', {
                 method: 'POST',
@@ -401,7 +400,7 @@
 
             const data = await res.json();
             progressBar.style.width = '90%';
-            statusText.innerText = "生成された画像を反映しています...";
+            statusText.innerText = "処理結果を反映しています...";
 
             setTimeout(function() {
                 progressBar.style.width = '100%';
@@ -413,7 +412,7 @@
         } catch (error) {
             console.error("API Connection Error:", error);
             statusText.innerText = "エラー: " + error.message;
-            alert("AI処理中にエラーが発生しました:\n" + error.message);
+            alert("処理中にエラーが発生しました:\n" + error.message);
             return null;
         } finally {
             setTimeout(function() {
@@ -423,9 +422,9 @@
         }
     }
 
-    window.executeGeminiRoomClear = async function() {
-        const prompt = "この部屋の写真に写っているすべての家具、ソファ、テーブル、シャンデリア、暖炉などの調度品を完全に消去し、隠れていた床の木目や壁を違和感なく補完して、家具が一切ないクリーンな状態の部屋の画像を生成してください。";
-        const newImageUrl = await callGeminiApi(prompt, "ROOM CLEAR EXECUTING");
+    window.executeDirectRoomClear = async function() {
+        const prompt = "Remove all furniture, chairs, tables, and decorations from this room image, leaving only the clean empty room with floor and walls.";
+        const newImageUrl = await callDirectApi(prompt, "ROOM CLEAR EXECUTING");
         
         if (newImageUrl) {
             document.getElementById('real-photo-bg').style.backgroundImage = "url('" + newImageUrl + "')";
@@ -433,9 +432,9 @@
         }
     };
 
-    window.executeGeminiRecommend = async function() {
-        const prompt = "このクリーンな部屋の写真に対して、高級感のあるファブリックソファ、スタイリッシュなセンターテーブル、上質なシャンデリアを黄金比のバランスで美しく配置したコーディネート完成形のインテリア画像を生成してください。";
-        const newImageUrl = await callGeminiApi(prompt, "UNOGRAM AI COORDINATE");
+    window.executeDirectRecommend = async function() {
+        const prompt = "Add a luxurious fabric sofa and a stylish center table to this empty room image.";
+        const newImageUrl = await callDirectApi(prompt, "AI COORDINATE EXECUTING");
         
         if (newImageUrl) {
             document.getElementById('real-photo-bg').style.backgroundImage = "url('" + newImageUrl + "')";
@@ -530,4 +529,3 @@
 
 </body>
 </html>
-
